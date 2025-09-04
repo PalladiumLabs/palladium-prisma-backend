@@ -1,6 +1,7 @@
 import express from "express";
 import { ethers } from "ethers";
 import fs from "fs";
+import cors from "cors";
 
 // Load config.json
 const config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
@@ -28,6 +29,8 @@ const priceFeed = new ethers.Contract(config.PRICE_FEED, priceFeedAbi, provider)
 // Express app
 const app = express();
 const PORT = 3000;
+
+app.use(cors());
 
 // Helpers
 const n = (x) => Number(x);
