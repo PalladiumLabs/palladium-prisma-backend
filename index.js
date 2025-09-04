@@ -139,7 +139,7 @@ app.get("/metrics", async (req, res) => {
         _id: Date.now().toString(),
         metrics: [
           {
-            token: config.SYMBOL || "SSS",
+            token: config.SYMBOL || "pBTC",
             price,
             TCR: ethers.formatEther(Number(TCR).toString()),
             MCR,
@@ -152,9 +152,9 @@ app.get("/metrics", async (req, res) => {
             maxMint: 100000000,
           },
         ],
-        pricesss: 1,
-        priceysss: 1.00503370738977,
-        stakedsss: 8902.55020135273,
+        pricePUSD: 1,
+        priceyPUSD: 1.00503370738977,
+        stakedPUSD: 8902.55020135273,
       },
     ];
 
