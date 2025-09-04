@@ -116,12 +116,27 @@ app.get("/metrics", async (req, res) => {
     // Read price safely
     const { price, priceRaw, feedFrozen, feedError } = await readPriceSafe(token);
 
+    // Contracts
+    const borrowOpsAbi = JSON.parse(fs.readFileSync("./abi/BorrowOperations.json", "utf8"));
+    const borrowOps = new ethers.Contract(config.BORROWER_OPERATIONS, borrowOpsAbi, provider);
+
     // Fetch system values
-    const [totalCollRaw, totalDebtRaw, MCRRaw, CCRRaw] = await Promise.all([
+    const [
+      totalCollRaw,
+      totalDebtRaw,
+      MCRRaw,
+      CCRRaw,
+      minNetDebtRaw,
+      debtGasCompRaw,
+      borrowRateRaw,
+    ] = await Promise.all([
       troveManager.getEntireSystemColl(),
       troveManager.getEntireSystemDebt(),
       troveManager.MCR(),
       troveManager.CCR(),
+      borrowOps.minNetDebt(),
+      borrowOps.DEBT_GAS_COMPENSATION(),
+      troveManager.getBorrowingRate(),
     ]);
 
     const totalcoll = fmt(totalCollRaw, DECIMALS.COLL); // token units
@@ -133,9 +148,14 @@ app.get("/metrics", async (req, res) => {
     // TCR = total collateral USD / total debt USD
     const TCR = totaldebt > 0 ? (collUsd / totaldebt) : 0;
 
-    // Format MCR & CCR (scale by 1e18 → number like 1.1)
+    // Format ratios (scale by 1e18 → number like 1.1)
     const MCR = n(ethers.formatUnits(MCRRaw, 18));
     const CCR = n(ethers.formatUnits(CCRRaw, 18));
+
+    // Convert new values
+    const minDebt = fmt(minNetDebtRaw, DECIMALS.DEBT);
+    const LR = fmt(debtGasCompRaw, DECIMALS.DEBT);
+    const borrowRate = n(ethers.formatUnits(borrowRateRaw, 18)); // usually annualized %
 
     const data = [
       {
@@ -147,9 +167,9 @@ app.get("/metrics", async (req, res) => {
             TCR: ethers.formatEther(Number(TCR).toString()),
             MCR,
             CCR,
-            minDebt: 50,
-            LR: 5,
-            borrowRate: 0.04,
+            minDebt,
+            LR,
+            borrowRate,
             totalcoll,
             totaldebt,
             maxMint: 100000000,
@@ -167,6 +187,7 @@ app.get("/metrics", async (req, res) => {
     res.status(500).json({ error: err.message || String(err) });
   }
 });
+
 
 
 // Extra diagnostics: peek into oracle + price records
