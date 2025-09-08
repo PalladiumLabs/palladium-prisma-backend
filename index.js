@@ -84,7 +84,7 @@ async function readPriceSafe(token) {
 
   return {
     priceRaw,
-    price: n(ethers.formatUnits(priceRaw, DECIMALS.PRICE)),
+    price: Number(ethers.formatUnits(priceRaw, 8)),
     feedFrozen,
     feedError,
     lastUpdated,
@@ -163,7 +163,8 @@ app.get("/metrics", async (req, res) => {
         metrics: [
           {
             token: config.SYMBOL || "pBTC",
-            price,
+            //priceRaw: priceRaw.toString(),  // <--- raw uint from contract
+            price: Number(priceRaw) / 1e18,                        // optional: formatted for humans
             TCR: ethers.formatEther(Number(TCR).toString()),
             MCR,
             CCR,
@@ -180,6 +181,7 @@ app.get("/metrics", async (req, res) => {
         stakedPUSD: 8902.55020135273,
       },
     ];
+
 
     res.json(data);
   } catch (err) {
